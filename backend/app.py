@@ -5,16 +5,22 @@ import json
 import random
 import nltk
 from nltk.stem import PorterStemmer
+import os
 
 app = Flask(__name__)
 CORS(app)
 
 # Load trained model and data
-model = pickle.load(open('model/chatbot_model.pkl', 'rb'))
-vectorizer = pickle.load(open('model/vectorizer.pkl', 'rb'))
-tags = pickle.load(open('model/tags.pkl', 'rb'))
+model_path = os.path.join("model", "chatbot_model.pkl")
+vectorizer_path = os.path.join("model", "vectorizer.pkl")
+tags_path = os.path.join("model", "tags.pkl")
+data_path = os.path.join("model", "rwanda_tourism_data.json")
 
-with open("model/rwanda_tourism_data.json") as f:
+model = pickle.load(open(model_path, 'rb'))
+vectorizer = pickle.load(open(vectorizer_path, 'rb'))
+tags = pickle.load(open(tags_path, 'rb'))
+
+with open(data_path) as f:
     intents = json.load(f)['intents']
 
 stemmer = PorterStemmer()
@@ -40,4 +46,5 @@ def chat():
     return jsonify({'response': response})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
