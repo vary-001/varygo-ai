@@ -25,7 +25,9 @@ except LookupError:
 # Flask app setup
 # -----------------------------
 app = Flask(__name__)
-CORS(app)
+
+# Allow React frontend to access API (adjust origins for production)
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # Logging for debugging
 logging.basicConfig(level=logging.INFO)
@@ -45,6 +47,8 @@ try:
 
     with open(data_path) as f:
         intents = json.load(f)['intents']
+
+    logging.info("Model and data loaded successfully.")
 except Exception as e:
     logging.error("Error loading model files: %s", e)
     raise e
@@ -52,7 +56,7 @@ except Exception as e:
 stemmer = PorterStemmer()
 
 # -----------------------------
-# Helper function for responses
+# Helper function for chatbot responses
 # -----------------------------
 def get_response(user_input):
     try:
@@ -68,6 +72,7 @@ def get_response(user_input):
                 return random.choice(intent['responses'])
     except Exception as e:
         logging.error("Error processing input: %s", e)
+
     return "I'm not sure how to answer that yet, but I'm learning more about Rwanda every day!"
 
 # -----------------------------
