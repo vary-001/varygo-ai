@@ -16,20 +16,11 @@ try:
 except LookupError:
     nltk.download("punkt")
 
-try:
-    nltk.data.find("tokenizers/punkt_tab/english")
-except LookupError:
-    nltk.download("punkt")
-
 # -----------------------------
 # Flask app setup
 # -----------------------------
 app = Flask(__name__)
-
-# Allow React frontend to access API (adjust origins for production)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
-
-# Logging for debugging
 logging.basicConfig(level=logging.INFO)
 
 # -----------------------------
@@ -61,15 +52,26 @@ stemmer = PorterStemmer()
 def get_response(user_input):
     try:
         tokens = nltk.word_tokenize(user_input.lower())
+        tokens = [w for w in tokens if w.isalnum()]  # remove punctuation
         stemmed = [stemmer.stem(w) for w in tokens]
         processed_input = ' '.join(stemmed)
         X = vectorizer.transform([processed_input])
-        predicted_tag_index = model.predict(X)[0]
+        probs = model.predict_proba(X)[0]
+        predicted_tag_index = probs.argmax()
+        max_prob = probs[predicted_tag_index]
         predicted_tag = tags[predicted_tag_index]
+
+        logging.info("User input: '%s' | Predicted tag: '%s' | Probability: %.2f", 
+                     user_input, predicted_tag, max_prob)
+
+        # Only return response if confidence > 30%
+        if max_prob < 0.3:
+            return "I'm not sure how to answer that yet, but I'm learning more about Rwanda every day!"
 
         for intent in intents:
             if intent['tag'] == predicted_tag:
                 return random.choice(intent['responses'])
+
     except Exception as e:
         logging.error("Error processing input: %s", e)
 
