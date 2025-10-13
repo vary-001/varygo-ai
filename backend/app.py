@@ -9,95 +9,93 @@ import os
 import logging
 
 # -----------------------------
-# Ensure NLTK tokenizer is available
+# ✅ Download required NLTK resources at startup
 # -----------------------------
-try:
-    nltk.data.find("tokenizers/punkt")
-except LookupError:
-    nltk.download("punkt")
+nltk.download("punkt")
+nltk.download("punkt_tab")
 
 # -----------------------------
 # Flask app setup
 # -----------------------------
 app = Flask(__name__)
+
+# Allow frontend (e.g., React on Netlify) to access this API
 CORS(app, resources={r"/api/*": {"origins": "*"}})
+
+# Logging setup
 logging.basicConfig(level=logging.INFO)
 
 # -----------------------------
-# Load trained model and data
+# Load model and data files
 # -----------------------------
-model_path = os.path.join("model", "chatbot_model.pkl")
-vectorizer_path = os.path.join("model", "vectorizer.pkl")
-tags_path = os.path.join("model", "tags.pkl")
-data_path = os.path.join("model", "rwanda_tourism_data.json")
+MODEL_DIR = "model"
+model_path = os.path.join(MODEL_DIR, "chatbot_model.pkl")
+vectorizer_path = os.path.join(MODEL_DIR, "vectorizer.pkl")
+tags_path = os.path.join(MODEL_DIR, "tags.pkl")
+data_path = os.path.join(MODEL_DIR, "rwanda_tourism_data.json")
 
 try:
-    model = pickle.load(open(model_path, 'rb'))
-    vectorizer = pickle.load(open(vectorizer_path, 'rb'))
-    tags = pickle.load(open(tags_path, 'rb'))
+    with open(model_path, "rb") as f:
+        model = pickle.load(f)
 
-    with open(data_path) as f:
-        intents = json.load(f)['intents']
+    with open(vectorizer_path, "rb") as f:
+        vectorizer = pickle.load(f)
 
-    logging.info("Model and data loaded successfully.")
+    with open(tags_path, "rb") as f:
+        tags = pickle.load(f)
+
+    with open(data_path, "r") as f:
+        intents = json.load(f)["intents"]
+
+    logging.info("✅ Model and data loaded successfully.")
 except Exception as e:
-    logging.error("Error loading model files: %s", e)
+    logging.error("❌ Error loading model files: %s", e)
     raise e
 
 stemmer = PorterStemmer()
 
 # -----------------------------
-# Helper function for chatbot responses
+# Helper: Generate chatbot response
 # -----------------------------
-def get_response(user_input):
+def get_response(user_input: str) -> str:
     try:
         tokens = nltk.word_tokenize(user_input.lower())
-        tokens = [w for w in tokens if w.isalnum()]  # remove punctuation
         stemmed = [stemmer.stem(w) for w in tokens]
-        processed_input = ' '.join(stemmed)
+        processed_input = " ".join(stemmed)
         X = vectorizer.transform([processed_input])
-        probs = model.predict_proba(X)[0]
-        predicted_tag_index = probs.argmax()
-        max_prob = probs[predicted_tag_index]
+        predicted_tag_index = model.predict(X)[0]
         predicted_tag = tags[predicted_tag_index]
 
-        logging.info("User input: '%s' | Predicted tag: '%s' | Probability: %.2f", 
-                     user_input, predicted_tag, max_prob)
-
-        # Only return response if confidence > 30%
-        if max_prob < 0.3:
-            return "I'm not sure how to answer that yet, but I'm learning more about Rwanda every day!"
-
         for intent in intents:
-            if intent['tag'] == predicted_tag:
-                return random.choice(intent['responses'])
-
+            if intent["tag"] == predicted_tag:
+                return random.choice(intent["responses"])
     except Exception as e:
         logging.error("Error processing input: %s", e)
 
+    # Default fallback response
     return "I'm not sure how to answer that yet, but I'm learning more about Rwanda every day!"
 
 # -----------------------------
 # Routes
 # -----------------------------
-@app.route('/')
+@app.route("/")
 def home():
-    return "Chatbot API is running!"
+    return "🌍 Rwanda Tourism Chatbot API is running!"
 
-@app.route('/api/chat', methods=['POST'])
+@app.route("/api/chat", methods=["POST"])
 def chat():
     try:
         data = request.get_json()
-        message = data.get('message', '')
+        message = data.get("message", "")
         response = get_response(message)
-        return jsonify({'response': response})
+        return jsonify({"response": response})
     except Exception as e:
         logging.error("Error in /api/chat: %s", e)
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": str(e)}), 500
 
 # -----------------------------
-# Run app
+# Run app (Render sets PORT)
 # -----------------------------
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
