@@ -1,10 +1,12 @@
 // src/components/ChatAssistance.jsx
 import React, { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import ChatModal from './ChatModal';
 import VoiceAssistantCard from './VoiceAssistantCard';
 
-function ChatAssistance({ user, onAuthSuccess }) {
+function ChatAssistance() {
   const [showChatModal, setShowChatModal] = useState(false);
+  const { user } = useAuth();
 
   const openChatModal = () => {
     setShowChatModal(true);
@@ -87,41 +89,14 @@ function ChatAssistance({ user, onAuthSuccess }) {
           </div>
           
           {/* Voice Assistant Card */}
-          <VoiceAssistantCard user={user} />
-        </div>
-
-        {/* Additional Info */}
-        <div className="mt-12 text-center">
-          <div className="glass-effect rounded-2xl p-8 max-w-4xl mx-auto border border-varygo-gold/20">
-            <h3 className="text-2xl font-heading font-bold text-varygo-text-light mb-4">
-              Ready to Transform Your Rwandan Adventure?
-            </h3>
-            <p className="text-lg text-varygo-text-light/80 mb-6">
-              Join thousands of travelers who have discovered Rwanda's hidden gems with VaryGo AI
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <button 
-                onClick={openChatModal}
-                className="bg-varygo-gold text-varygo-blue-dark px-6 py-3 rounded-xl font-semibold hover:bg-opacity-90 transition duration-200 flex items-center justify-center space-x-2"
-              >
-                <i className="fas fa-robot"></i>
-                <span>Start Free Chat</span>
-              </button>
-              <button className="border border-varygo-text-light/30 text-varygo-text-light px-6 py-3 rounded-xl font-semibold hover:bg-white/10 transition duration-200 flex items-center justify-center space-x-2">
-                <i className="fas fa-mobile-alt"></i>
-                <span>Get Mobile App</span>
-              </button>
-            </div>
-          </div>
+          <VoiceAssistantCard />
         </div>
       </div>
 
       {/* Chat Modal */}
       {showChatModal && (
         <ChatModal 
-          user={user} 
-          onClose={closeChatModal} 
-          onAuthSuccess={onAuthSuccess}
+          onClose={closeChatModal}
         />
       )}
     </section>

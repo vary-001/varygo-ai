@@ -1,8 +1,9 @@
 // src/components/ChatModal.jsx
 import React, { useState, useRef, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import AuthModal from './AuthModal';
 
-function ChatModal({ user, onClose, onAuthSuccess }) {
+function ChatModal({ onClose }) {
   const [messages, setMessages] = useState([
     { 
       id: 1, 
@@ -17,6 +18,7 @@ function ChatModal({ user, onClose, onAuthSuccess }) {
   const [copiedMessageId, setCopiedMessageId] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (inputRef.current) {
@@ -34,7 +36,7 @@ function ChatModal({ user, onClose, onAuthSuccess }) {
 
   const sendMessageToAPI = async (message) => {
     try {
-      const response = await fetch('https://varygo-ai.onrender.com/api/chat', {
+      const response = await fetch('http://localhost:5000/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -123,11 +125,6 @@ function ChatModal({ user, onClose, onAuthSuccess }) {
     } catch (err) {
       console.error('Failed to copy text: ', err);
     }
-  };
-
-  const handleAuthSuccess = (userData) => {
-    onAuthSuccess(userData);
-    setShowAuthModal(false);
   };
 
   return (
@@ -282,8 +279,7 @@ function ChatModal({ user, onClose, onAuthSuccess }) {
       {showAuthModal && (
         <AuthModal 
           mode="login"
-          onClose={() => setShowAuthModal(false)} 
-          onAuthSuccess={handleAuthSuccess}
+          onClose={() => setShowAuthModal(false)}
         />
       )}
     </>
